@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proposta — CRM Portal BJ</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --blue: #0077fc;
+        --bg: #0a0e17;
+        --panel: #10172a;
+        --green: #20d17d;
+        --yellow: #ffca3a;
+        --red: #ff4d4d;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body {
+        background: var(--bg);
+        color: #fff;
+      }
+      #deck {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      #viewport {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+      #track {
+        display: flex;
+        height: 100%;
+        transition: transform 0.65s cubic-bezier(0.65, 0, 0.35, 1);
+      }
+      .slide {
+        height: 100%;
+        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+        background: var(--bg);
+      }
+      .orb {
+        pointer-events: none;
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+      }
+      .orb-tl {
+        width: 420px;
+        height: 420px;
+        background: radial-gradient(
+          circle,
+          rgba(0, 119, 252, 0.5),
+          transparent 60%
+        );
+        top: -120px;
+        left: -120px;
+        opacity: 0.4;
+      }
+      .orb-br {
+        width: 480px;
+        height: 480px;
+        background: radial-gradient(
+          circle,
+          rgba(0, 119, 252, 0.4),
+          transparent 60%
+        );
+        bottom: -140px;
+        right: -140px;
+        opacity: 0.3;
+      }
+      #navbar {
+        height: 68px;
+        flex-shrink: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(7, 11, 20, 0.92);
+        backdrop-filter: blur(12px);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1.5rem;
+        gap: 1rem;
+      }
+      #topbadge {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 99;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .badge-counter {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+        padding: 0.4rem 1rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #fff;
+      }
+      .btn-pdf {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(8px);
+        padding: 0.4rem 0.9rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #fff;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .btn-pdf:hover {
+        border-color: var(--blue);
+        background: rgba(0, 119, 252, 0.15);
+      }
+      .nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1.1rem;
+        border-radius: 100px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        border: none;
+      }
+      .nav-btn-prev {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+      }
+      .nav-btn-prev:hover:not(:disabled) {
+        border-color: var(--blue);
+        background: rgba(0, 119, 252, 0.15);
+      }
+      .nav-btn-next {
+        background: var(--blue);
+        color: #fff;
+        box-shadow: 0 0 22px rgba(0, 119, 252, 0.5);
+      }
+      .nav-btn-next:hover:not(:disabled) {
+        transform: scale(1.04);
+      }
+      .nav-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      #dots {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        overflow-x: auto;
+      }
+      .dot {
+        height: 8px;
+        width: 8px;
+        border-radius: 100px;
+        border: none;
+        cursor: pointer;
+        transition: 0.3s;
+        background: rgba(255, 255, 255, 0.25);
+      }
+      .dot.active {
+        width: 26px;
+        background: var(--blue);
+        box-shadow: 0 0 10px rgba(0, 119, 252, 0.7);
+      }
+      .label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.25em;
+        color: var(--blue);
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .big {
+        font-size: clamp(2rem, 5vw, 3.8rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+      .mid {
+        font-size: clamp(1.4rem, 3.5vw, 2.6rem);
+        font-weight: 700;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+      .blue {
+        color: var(--blue);
+      }
+      .sub {
+        color: rgba(255, 255, 255, 0.65);
+        line-height: 1.7;
+        font-size: 0.95rem;
+      }
+      .content {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 1060px;
+      }
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2.5rem;
+        align-items: center;
+        width: 100%;
+      }
+      .g2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      .g3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.9rem;
+      }
+      .ga {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 0.85rem;
+      }
+      .gcard {
+        background: rgba(16, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        backdrop-filter: blur(8px);
+        transition: 0.25s;
+      }
+      .gcard:hover {
+        border-color: rgba(0, 119, 252, 0.55);
+        transform: translateY(-3px);
+        box-shadow: 0 0 35px rgba(0, 119, 252, 0.3);
+      }
+      .gcard.active {
+        border-color: rgba(0, 119, 252, 0.75);
+        box-shadow: 0 0 40px rgba(0, 119, 252, 0.35);
+      }
+      .ibox {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: rgba(0, 119, 252, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--blue);
+        flex-shrink: 0;
+        font-weight: 700;
+        font-size: 1rem;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        background: var(--blue);
+        color: #fff;
+        border-radius: 100px;
+        padding: 0.45rem 1.2rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        box-shadow: 0 0 22px rgba(0, 119, 252, 0.45);
+      }
+      .ghost-pill {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.8);
+        border-radius: 100px;
+        padding: 0.42rem 1rem;
+        font-size: 0.74rem;
+        font-weight: 650;
+      }
+      .price-main {
+        border: 2px solid var(--blue);
+        border-radius: 18px;
+        padding: 1.5rem;
+        background: rgba(0, 119, 252, 0.07);
+        position: relative;
+        box-shadow: 0 0 50px rgba(0, 119, 252, 0.24);
+      }
+      .price-tag {
+        position: absolute;
+        top: -14px;
+        left: 1.5rem;
+        background: var(--blue);
+        color: #fff;
+        border-radius: 100px;
+        padding: 0.35rem 1rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        box-shadow: 0 0 22px rgba(0, 119, 252, 0.5);
+      }
+      .price-line {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.72rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 0.9rem;
+      }
+      .price-line:last-child {
+        border-bottom: 0;
+      }
+      .feature-card h3,
+      .pcard h4 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 0.35rem;
+      }
+      .feature-card p,
+      .pcard p {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.52);
+        line-height: 1.52;
+      }
+      .mini {
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.48);
+        line-height: 1.5;
+      }
+      .kanban {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.55rem;
+        margin-top: 1.1rem;
+      }
+      .lane {
+        min-height: 230px;
+        background: rgba(16, 23, 42, 0.78);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 0.75rem;
+      }
+      .lane h4 {
+        font-size: 0.72rem;
+        color: #fff;
+        margin-bottom: 0.6rem;
+      }
+      .deal {
+        background: rgba(255, 255, 255, 0.055);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 0.6rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.68rem;
+        color: rgba(255, 255, 255, 0.72);
+        line-height: 1.35;
+      }
+      .warn {
+        border-color: rgba(255, 202, 58, 0.35);
+        background: rgba(255, 202, 58, 0.08);
+      }
+      .danger {
+        border-color: rgba(255, 77, 77, 0.35);
+        background: rgba(255, 77, 77, 0.08);
+      }
+      .traffic {
+        display: flex;
+        gap: 0.38rem;
+        align-items: center;
+        margin: 0.55rem 0;
+      }
+      .light {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        box-shadow: 0 0 18px currentColor;
+      }
+      .green {
+        color: var(--green);
+        background: var(--green);
+      }
+      .yellow {
+        color: var(--yellow);
+        background: var(--yellow);
+      }
+      .red {
+        color: var(--red);
+        background: var(--red);
+      }
+      .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .tstep {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      .tstep-num {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        box-shadow: 0 0 18px rgba(0, 119, 252, 0.5);
+      }
+      @media (max-width: 800px) {
+        .two-col {
+          grid-template-columns: 1fr;
+          gap: 1.2rem;
+        }
+        .g3,
+        .kanban {
+          grid-template-columns: 1fr 1fr;
+        }
+        .slide {
+          padding: 1rem;
+        }
+        .big {
+          font-size: 1.8rem;
+        }
+        .mid {
+          font-size: 1.4rem;
+        }
+        #navbar {
+          padding: 0 0.75rem;
+        }
+        .nav-btn span {
+          display: none;
+        }
+      }
+      @media (max-width: 520px) {
+        .g2,
+        .g3,
+        .kanban {
+          grid-template-columns: 1fr;
+        }
+        #topbadge {
+          left: 1rem;
+          right: auto;
+        }
+      }
+      @media print {
+        html,
+        body {
+          height: auto;
+          overflow: visible;
+          background: #fff;
+          color: #000;
+        }
+        #navbar,
+        #topbadge {
+          display: none !important;
+        }
+        #deck,
+        #viewport,
+        #track,
+        .slide {
+          position: static !important;
+          height: auto !important;
+          overflow: visible !important;
+          display: block !important;
+          transform: none !important;
+          width: 100% !important;
+        }
+        .slide {
+          page-break-after: always;
+          min-height: 100vh;
+          background: #fff !important;
+          color: #000;
+        }
+        .orb {
+          display: none;
+        }
+        .sub,
+        .mini,
+        .feature-card p,
+        .pcard p {
+          color: #333 !important;
+        }
+        .gcard,
+        .lane,
+        .deal,
+        .price-main {
+          background: #fff !important;
+          border-color: #ccc !important;
+          box-shadow: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="deck">
+      <div id="viewport"><div id="track"></div></div>
+      <div id="navbar">
+        <button class="nav-btn nav-btn-prev" id="btnPrev" onclick="go(-1)">
+          <svg
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M19 12H5M12 5l-7 7 7 7" /></svg
+          ><span>Anterior</span>
+        </button>
+        <div id="dots"></div>
+        <button class="nav-btn nav-btn-next" id="btnNext" onclick="go(1)">
+          <span>Próximo</span
+          ><svg
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div id="topbadge">
+      <div class="badge-counter" id="counter">01 / 07 · Capa</div>
+      <button class="btn-pdf" onclick="window.print()">
+        <svg
+          width="13"
+          height="13"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" /></svg
+        >Baixar PDF
+      </button>
+    </div>
+
+    <script>
+      const checkSvg = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+      const slides = [
+        {
+          label: "Capa",
+          html: `
+<div class="orb orb-tl"></div><div class="orb orb-br"></div>
+<div class="content" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.2rem">
+  <div style="display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center"><div class="pill">Proposta CRM</div><div class="pill">Portal BJ</div></div>
+  <p class="label" style="margin:0">Proposta Comercial · 2026</p>
+  <h1 class="big" style="max-width:880px">Sistema de <span class="blue">CRM Comercial</span></h1>
+  <p class="sub" style="max-width:620px">Plataforma para gestão de clientes, negócios, propostas, funil de vendas, relatórios e controle de acessos, integrada aos critérios de faturamento e projetos colaborativos do Portal BJ.</p>
+  <div style="display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem">
+    <div style="text-align:center"><div style="font-size:1.15rem;font-weight:700">R$ 10.000</div><div style="font-size:.65rem;color:rgba(255,255,255,.45);letter-spacing:.08em;text-transform:uppercase;margin-top:.1rem">Investimento total</div></div>
+    <div style="text-align:center"><div style="font-size:1.15rem;font-weight:700">R$ 9.000</div><div style="font-size:.65rem;color:rgba(255,255,255,.45);letter-spacing:.08em;text-transform:uppercase;margin-top:.1rem">Desenvolvimento</div></div>
+    <div style="text-align:center"><div style="font-size:1.15rem;font-weight:700">R$ 1.000</div><div style="font-size:.65rem;color:rgba(255,255,255,.45);letter-spacing:.08em;text-transform:uppercase;margin-top:.1rem">Utilização por 1 ano</div></div>
+    <div style="text-align:center"><div style="font-size:1.15rem;font-weight:700">CRM</div><div style="font-size:.65rem;color:rgba(255,255,255,.45);letter-spacing:.08em;text-transform:uppercase;margin-top:.1rem">Entregável</div></div>
+  </div>
+  <p style="font-size:.72rem;color:rgba(255,255,255,.3);margin-top:.5rem">Use as setas ← → ou arraste para navegar</p>
+</div>`,
+        },
+        {
+          label: "Visão Geral",
+          html: `
+<div class="orb orb-tl"></div><div class="orb orb-br"></div>
+<div class="content two-col">
+  <div>
+    <p class="label">01 · Visão Geral</p><h2 class="mid">CRM para gestão comercial<br>e tomada de decisão</h2>
+    <p class="sub" style="margin-top:.8rem;max-width:460px">A proposta contempla o desenvolvimento de um CRM próprio para centralizar informações comerciais, acompanhar o avanço de oportunidades e apoiar a gestão da EJ com indicadores confiáveis.</p>
+    <p class="sub" style="margin-top:.6rem;max-width:460px;font-size:.85rem">O sistema foi pensado para reduzir perda de timing comercial, organizar histórico de atendimento e facilitar a transição anual de gestões.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:.85rem">
+    ${[
+      [
+        "01",
+        "Centralização Comercial",
+        "Clientes, reuniões, e-mails, propostas e negócios organizados em um único ambiente.",
+      ],
+      [
+        "02",
+        "Gestão por Indicadores",
+        "KPIs de vendas, metas, conversão e tempo médio por etapa do funil.",
+      ],
+      [
+        "03",
+        "Continuidade de Gestão",
+        "Permissões por cargo e registro histórico para facilitar mudanças de equipe ao longo dos anos.",
+      ],
+    ]
+      .map(
+        ([n, t, d]) =>
+          `<div class="gcard" style="display:flex;gap:1rem;align-items:flex-start"><div class="ibox">${n}</div><div><h3 style="font-size:.9rem;font-weight:700;margin-bottom:.2rem">${t}</h3><p style="font-size:.78rem;color:rgba(255,255,255,.55);line-height:1.5">${d}</p></div></div>`,
+      )
+      .join("")}
+  </div>
+</div>`,
+        },
+        {
+          label: "Funcionalidades",
+          html: `
+<div class="orb orb-tl"></div><div class="orb orb-br"></div>
+<div class="content">
+  <p class="label" style="text-align:center">02 · Funcionalidades Principais</p><h2 class="mid" style="text-align:center;margin-bottom:1.2rem">Módulos do CRM</h2>
+  <div class="ga">
+    ${[
+      [
+        "Dashboard Executivo",
+        "Monitoramento de KPIs de vendas, metas, faturamento e projetos colaborativos do Portal BJ, com barra de progresso visual e semáforo de metas.",
+      ],
+      [
+        "Clientes e Negócios",
+        "Cadastro centralizado, histórico de interações, registro de reuniões, e-mails, propostas em PDF e análise de motivos de perda.",
+      ],
+      [
+        "Funil Visual Kanban",
+        "Fluxo arrastável para venda consultiva, com etapas adaptáveis, alertas de inatividade e visão rápida de oportunidades por fase.",
+      ],
+      [
+        "Relatórios e Auditoria",
+        "Relatórios de conversão por período e responsável, auditoria de evolução e cálculo de tempo médio em cada etapa do funil.",
+      ],
+      [
+        "Administração de Acessos",
+        "Controle de permissões por nível de cargo, separando Administrador e Usuário para proteção de dados sensíveis.",
+      ],
+      [
+        "Base para Transição Anual",
+        "Estrutura que preserva histórico, processos e informações comerciais mesmo com troca anual de gestão da EJ.",
+      ],
+    ]
+      .map(
+        ([t, d], i) =>
+          `<div class="gcard feature-card"><div class="ibox" style="margin-bottom:.7rem">${String(i + 1).padStart(2, "0")}</div><h3>${t}</h3><p>${d}</p></div>`,
+      )
+      .join("")}
+  </div>
+</div>`,
+        },
+        {
+          label: "Dashboard",
+          html: `
+<div class="orb orb-tl"></div><div class="orb orb-br"></div>
+<div class="content two-col">
+  <div>
+    <p class="label">03 · Dashboard Executivo</p><h2 class="mid">Indicadores claros para<br>acompanhar metas</h2>
+    <p class="sub" style="margin-top:.8rem">O dashboard apresenta os principais KPIs comerciais em tempo real, permitindo acompanhar performance, faturamento previsto, conversões e status dos projetos colaborativos.</p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem"><span class="ghost-pill">KPIs de vendas</span><span class="ghost-pill">Metas comerciais</span><span class="ghost-pill">Faturamento</span><span class="ghost-pill">Projetos colaborativos</span></div>
+  </div>
+  <div class="gcard active">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3 style="font-size:1rem">Semáforo de Metas</h3><span class="ghost-pill">Exemplo visual</span></div>
+    <div class="traffic"><span class="light green"></span><strong>Meta saudável</strong><span class="mini">· acima do planejado</span></div>
+    <div style="height:10px;background:rgba(255,255,255,.08);border-radius:20px;overflow:hidden;margin:.6rem 0 1rem"><div style="width:84%;height:100%;background:var(--green);border-radius:20px"></div></div>
+    <div class="traffic"><span class="light yellow"></span><strong>Atenção</strong><span class="mini">· exige ação comercial</span></div>
+    <div style="height:10px;background:rgba(255,255,255,.08);border-radius:20px;overflow:hidden;margin:.6rem 0 1rem"><div style="width:58%;height:100%;background:var(--yellow);border-radius:20px"></div></div>
+    <div class="traffic"><span class="light red"></span><strong>Crítico</strong><span class="mini">· risco de não bater meta</span></div>
+    <div style="height:10px;background:rgba(255,255,255,.08);border-radius:20px;overflow:hidden;margin:.6rem 0"><div style="width:29%;height:100%;background:var(--red);border-radius:20px"></div></div>
+  </div>
+</div>`,
+        },
+        {
+          label: "Funil Kanban",
+          html: `
+<div class="orb orb-tl"></div><div class="orb orb-br"></div>
+<div class="content">
+  <p class="label" style="text-align:center">04 · Funil de Vendas Visual</p><h2 class="mid" style="text-align:center">Kanban adaptado à venda consultiva</h2>
+  <p class="sub" style="text-align:center;font-size:.86rem;margin:.5rem auto 0;max-width:680px">O CRM organiza os negócios por etapa, permitindo arrastar oportunidades, identificar gargalos e gerar alertas automáticos quando um lead fica inativo por tempo excessivo.</p>
+  <div class="kanban">
+    ${[
+      ["Novo Lead", ["Indústria Alfa", "Contato via Portal BJ"]],
+      ["Diagnóstico", ["Reunião agendada", "Briefing recebido"]],
+      ["Proposta", ["PDF enviado", "Aguardando retorno"]],
+      ["Negociação", ["Follow-up pendente", "Alerta: 7 dias sem ação"]],
+      ["Fechamento", ["Contrato aprovado", "Perdido: motivo registrado"]],
+    ]
+      .map(
+        (col, idx) =>
+          `<div class="lane"><h4>${col[0]}</h4>${col[1].map((d, j) => `<div class="deal ${idx === 3 && j === 1 ? "warn" : ""} ${idx === 4 && j === 1 ? "danger" : ""}">${d}</div>`).join("")}</div>`,
+      )
+      .join("")}
+  </div>
+</div>`,
+        },
+        {
+          label: "Relatórios e Acessos",
+          html: `
+<div class="orb orb-tl"></div><div class="orb orb-br"></div>
+<div class="content two-col">
+  <div>
+    <p class="label">05 · Relatórios e Auditoria</p><h2 class="mid">Medição, histórico<br>e rastreabilidade</h2>
+    <p class="sub" style="margin-top:.8rem">O módulo de relatórios consolida conversões por período e responsável, além de calcular automaticamente o tempo médio em cada etapa do funil.</p>
+    <div class="g2" style="margin-top:1rem">
+      <div class="gcard"><h3 style="font-size:.9rem;margin-bottom:.3rem">Conversão</h3><p class="mini">Relatórios por data, responsável, etapa e resultado.</p></div>
+      <div class="gcard"><h3 style="font-size:.9rem;margin-bottom:.3rem">Tempo médio</h3><p class="mini">Cálculo automático do tempo de permanência por fase.</p></div>
+    </div>
+  </div>
+  <div>
+    <p class="label">06 · Administração de Acessos</p><h2 class="mid">Permissões por nível<br>de responsabilidade</h2>
+    <p class="sub" style="margin-top:.8rem">O CRM diferencia acessos de Administrador e Usuário, protegendo dados sensíveis, limitando ações críticas e facilitando a entrada e saída de membros na transição anual.</p>
+    <div class="gcard active" style="margin-top:1rem">
+      <div class="price-line"><span>Administrador</span><strong class="blue">Gestão total</strong></div>
+      <div class="price-line"><span>Usuário</span><strong class="blue">Operação comercial</strong></div>
+      <div class="price-line"><span>Dados sensíveis</span><strong class="blue">Protegidos por permissão</strong></div>
+    </div>
+  </div>
+</div>`,
+        },
+        {
+          label: "Investimento",
+          html: `
+<div class="orb orb-tl"></div><div class="orb orb-br"></div>
+<div class="content two-col">
+  <div>
+    <p class="label">07 · Investimento</p><h2 class="mid">Proposta fechada<br>em <span class="blue">R$ 10.000</span></h2>
+    <p class="sub" style="margin-top:.8rem;max-width:460px">O valor contempla o desenvolvimento do CRM e a utilização do sistema por 1 ano, incluindo os módulos descritos nesta proposta.</p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem"><span class="ghost-pill">Desenvolvimento do CRM</span><span class="ghost-pill">Utilização anual</span><span class="ghost-pill">Módulos inclusos</span></div>
+  </div>
+  <div class="price-main">
+    <div class="price-tag">INVESTIMENTO TOTAL</div>
+    <div style="margin-top:.3rem">
+      <div class="price-line"><span>Desenvolvimento do CRM</span><strong>R$ 9.000</strong></div>
+      <div class="price-line"><span>Utilização do sistema por 1 ano</span><strong>R$ 1.000</strong></div>
+      <div class="price-line" style="font-size:1.05rem;color:#fff"><span>Total da proposta</span><strong class="blue">R$ 10.000</strong></div>
+    </div>
+    <p class="mini" style="margin-top:1rem">Inclui Dashboard Executivo, Clientes e Negócios, Kanban, Relatórios e Auditoria, Administração de Acessos e estrutura voltada à transição anual de gestões.</p>
+  </div>
+</div>`,
+        },
+      ];
+      let cur = 0;
+      const track = document.getElementById("track");
+      const total = slides.length;
+      slides.forEach((s) => {
+        const sec = document.createElement("section");
+        sec.className = "slide";
+        sec.style.width = 100 / total + "%";
+        sec.innerHTML = s.html;
+        track.appendChild(sec);
+      });
+      track.style.width = total * 100 + "%";
+      const dotsEl = document.getElementById("dots");
+      slides.forEach((_, i) => {
+        const d = document.createElement("button");
+        d.className = "dot" + (i === 0 ? " active" : "");
+        d.setAttribute("aria-label", "Slide " + (i + 1));
+        d.onclick = () => goTo(i);
+        dotsEl.appendChild(d);
+      });
+      function goTo(n) {
+        cur = Math.max(0, Math.min(n, total - 1));
+        track.style.transform = `translateX(-${(cur * 100) / total}%)`;
+        document.getElementById("counter").textContent =
+          String(cur + 1).padStart(2, "0") +
+          " / " +
+          String(total).padStart(2, "0") +
+          " · " +
+          slides[cur].label;
+        document.getElementById("btnPrev").disabled = cur === 0;
+        document.getElementById("btnNext").disabled = cur === total - 1;
+        document
+          .querySelectorAll(".dot")
+          .forEach((d, i) => d.classList.toggle("active", i === cur));
+      }
+      function go(d) {
+        goTo(cur + d);
+      }
+      window.go = go;
+      window.goTo = goTo;
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight") go(1);
+        if (e.key === "ArrowLeft") go(-1);
+      });
+      let tx = null;
+      document.getElementById("viewport").addEventListener(
+        "touchstart",
+        (e) => {
+          tx = e.touches[0].clientX;
+        },
+        { passive: true },
+      );
+      document.getElementById("viewport").addEventListener("touchend", (e) => {
+        if (tx == null) return;
+        const dx = e.changedTouches[0].clientX - tx;
+        if (dx < -50) go(1);
+        if (dx > 50) go(-1);
+        tx = null;
+      });
+      goTo(0);
+    </script>
+  </body>
+</html>
